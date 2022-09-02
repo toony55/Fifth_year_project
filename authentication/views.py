@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status,views,generics
 from .models import User
-from .serializers import RegisterSerializer,getSerializer,EmailVerificationSerializer
+from .serializers import RegisterSerializer,getSerializer,EmailVerificationSerializer,LoginSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.urls import reverse
 from django.contrib.sites.shortcuts import get_current_site
@@ -11,7 +11,7 @@ from .utils import Util
 import jwt
 from django.conf import settings
 
-
+#green this issssss verrrrrrrrrrrrrified APi
 @api_view(['GET'])
 def verified(request):
         token = request.GET.get('token')
@@ -31,9 +31,9 @@ def verified(request):
             html=f'<center><h1>Wrong Link</h1></center>'
             return HttpResponse(html)
 
-
+#green this issssss Registeeeeeerrrrrrrrr APi
 @api_view(['POST'])
-def post(request):
+def register(request):
     user=request.data
     serializer=RegisterSerializer(data=user)
     serializer.is_valid(raise_exception=True)
@@ -54,7 +54,7 @@ def post(request):
 
 
 
-
+#green this issssss Geeeeeeeeeeeeeeeeeeeeeet APi
 
 @api_view(['GET'])
 def geet(request):
@@ -63,5 +63,9 @@ def geet(request):
     return Response(serializer.data)
 
 
-
-
+#green this issssss LoooooooooooooooooooooogIn APi
+@api_view(['POST'])
+def login(request):
+    serializer = LoginSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
