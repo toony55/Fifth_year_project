@@ -10,6 +10,9 @@ from django.contrib.sites.shortcuts import get_current_site
 from .utils import Util
 import jwt
 from django.conf import settings
+from django.contrib.messages.views import SuccessMessageMixin
+from django.urls import reverse_lazy
+from django.contrib.auth.views import PasswordResetView
 
 #green this issssss verrrrrrrrrrrrrified APi
 @api_view(['GET'])
@@ -69,3 +72,15 @@ def login(request):
     serializer = LoginSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+
+class ResetPasswordView(SuccessMessageMixin, PasswordResetView):
+    template_name = "authentication/password_reset.html"
+    email_template_name = "authentication/password_reset_email.html"
+    subject_template_name = "authentication/password_reset_subject.txt"
+    success_message = "We've emailed you instructions for setting your password, " \
+                      "if an account exists with the email you entered. You should receive them shortly." \
+                      " If you don't receive an email, " \
+                      "please make sure you've entered the address you registered with, and check your spam folder."

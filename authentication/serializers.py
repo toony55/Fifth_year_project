@@ -107,7 +107,7 @@ class LoginSerializer(serializers.ModelSerializer):
             Util.send_email(data)
             raise AuthenticationFailed('Your Account is not verified yet,plz check your email')
            
-        if not user.is_Active:
+        if not user.is_active:
             raise AuthenticationFailed('Account disabled, contact admin')
        
 
