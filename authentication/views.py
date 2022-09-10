@@ -1,9 +1,10 @@
 from django.http import HttpResponse
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
-from rest_framework import status,views,generics
+from rest_framework.decorators import api_view,permission_classes
+from rest_framework import status,views,generics,permissions
+from rest_framework.permissions import IsAuthenticated
 from .models import User
-from .serializers import RegisterSerializer,getSerializer,EmailVerificationSerializer,LoginSerializer
+from .serializers import RegisterSerializer,getSerializer,EmailVerificationSerializer,LoginSerializer,LogoutSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.urls import reverse
 from django.contrib.sites.shortcuts import get_current_site
@@ -58,8 +59,8 @@ def register(request):
 
 
 #green this issssss Geeeeeeeeeeeeeeeeeeeeeet APi
-
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def geet(request):
     obj=User.objects.all()
     serializer=getSerializer(obj,many=True)
@@ -75,7 +76,7 @@ def login(request):
 
 
 
-
+#green this issssss ReseeeeeeeeeeeeeeetPassword APi
 class ResetPasswordView(SuccessMessageMixin, PasswordResetView):
     template_name = "authentication/password_reset.html"
     email_template_name = "authentication/password_reset_email.html"
@@ -84,3 +85,18 @@ class ResetPasswordView(SuccessMessageMixin, PasswordResetView):
                       "if an account exists with the email you entered. You should receive them shortly." \
                       " If you don't receive an email, " \
                       "please make sure you've entered the address you registered with, and check your spam folder."
+
+
+
+
+
+#green this issssss LoooooooooooooooogOut APi
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout(request):
+    
+    serializer =LogoutSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+
+    return Response(status=status.HTTP_204_NO_CONTENT)

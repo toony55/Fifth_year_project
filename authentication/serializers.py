@@ -1,5 +1,5 @@
 from django.forms import ValidationError
-from rest_framework import serializers
+from rest_framework import serializers,status
 from .models import User
 import re
 from django.utils.translation import gettext_lazy as _
@@ -66,7 +66,7 @@ class getSerializer(serializers.ModelSerializer):
     updated_at=serializers.DateTimeField(format="%Y-%m-%d- %H:%M")
     class Meta:
         model = User
-        fields = '__all__'
+        exclude=['password',]
 
 #green this issssss LoooooooooooooooooooooogIn Serializer
 
@@ -92,8 +92,10 @@ class LoginSerializer(serializers.ModelSerializer):
         email = attrs.get('email', '')
         password = attrs.get('password', '')
         user = authenticate(email=email, password=password)
+
+
         if not user:
-            raise AuthenticationFailed('Invalid credentials, try again')
+            raise AuthenticationFailed('Wrong Email or Password')
 
         if not user.is_verified:
             token = RefreshToken.for_user(user).access_token
@@ -107,7 +109,7 @@ class LoginSerializer(serializers.ModelSerializer):
             Util.send_email(data)
             raise AuthenticationFailed('Your Account is not verified yet,plz check your email')
            
-        if not user.is_active:
+        if not user.Active:
             raise AuthenticationFailed('Account disabled, contact admin')
        
 
@@ -117,6 +119,23 @@ class LoginSerializer(serializers.ModelSerializer):
             'tokens': user.tokens
         }
 
+#green this issssss LoooooooooooooooooooooogOut Serializer
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
 
+    default_error_messages = {
+        'bad_token': ('Token is expired or invalid')
+    }
 
+    def validate(self, attrs):
+        self.token = attrs['refresh']
+        return attrs
+
+    def save(self, **kwargs):
+
+        try:
+            RefreshToken(self.token).blacklist()
+
+        except TokenError:
+            self.fail('bad_token')
 
