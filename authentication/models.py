@@ -1,8 +1,11 @@
+from email.policy import default
 from django.db import models
 
 from django.contrib.auth.models import (AbstractBaseUser, BaseUserManager, PermissionsMixin)
 from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
+from datetime import date
+
 
 
 class UserManager(BaseUserManager):
@@ -37,16 +40,27 @@ class User(AbstractBaseUser, PermissionsMixin):
     Active  = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now=True) 
+
+    first_name = models.CharField(max_length=30,default="") 
+    last_name = models.CharField(max_length=30,default="")
+    address = models.TextField(max_length=50,blank=True) 
+    phone_number = models.CharField(max_length=13,unique=True)
+    birthdate = models.DateField(default=date.today)
+    image = models.ImageField(upload_to='images/',default='images/1.png')
+
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
+    REQUIRED_FIELDS = ['username','first_name','last_name','phone_number','birthdate']
     objects = UserManager()
 
     
     def __str__(self):
         return f'{self.email} - {self.username}'
 
-
+    def age(self): 
+        today = date.today() 
+        age = today.year - self.birthdate.year - ((today.month, today.day) < (self.birthdate.month, self.birthdate.day)) 
+        return age
 
     def tokens(self):
         refresh = RefreshToken.for_user(self)

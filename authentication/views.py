@@ -14,6 +14,8 @@ from django.conf import settings
 from django.contrib.messages.views import SuccessMessageMixin
 from django.urls import reverse_lazy
 from django.contrib.auth.views import PasswordResetView
+from django.shortcuts import render
+
 
 #green this issssss verrrrrrrrrrrrrified APi
 @api_view(['GET'])
@@ -26,11 +28,19 @@ def verified(request):
             if not user.is_verified:
                 user.is_verified = True
                 user.save()
-            html=f'<center> <h1>Hello <mark style="background-color:white; color: MediumSeaGreen;"> {userr} </mark> ,Your Account Has Been Verified </h1>'
-            return HttpResponse(html)
+            context = {
+                'name': user.username,
+
+            }
+            return render(request, 'account_verified.html', context)
+
         except jwt.ExpiredSignatureError as identifier:
-            html=f'<center><h1>This Link Is Expired</h1></center>'
-            return HttpResponse(html)
+            context = {
+                'title': 'Link Expired',
+                'message': 'We\'re sorry, but the link you clicked on has expired.',
+                'image_url': 'https://i.postimg.cc/jS6fS7v7/error.png'
+            }
+            return render(request, 'expired_link.html', context)
         except jwt.exceptions.DecodeError as identifier:
             html=f'<center><h1>Wrong Link</h1></center>'
             return HttpResponse(html)
@@ -60,10 +70,10 @@ def register(request):
 
 #green this issssss Geeeeeeeeeeeeeeeeeeeeeet APi
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+#@permission_classes([IsAuthenticated])
 def geet(request):
-    obj=User.objects.all()
-    serializer=getSerializer(obj,many=True)
+    obj=User.objects.get(username="Yousef")
+    serializer = getSerializer(instance=obj, context={'request': request})
     return Response(serializer.data)
 
 

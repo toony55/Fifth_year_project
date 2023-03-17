@@ -33,6 +33,11 @@ ALLOWED_HOSTS = []
 
 AUTH_USER_MODEL='authentication.User'
 # Application definition
+AUTHENTICATION_BACKENDS = [
+    'authentication.backends.CustomAuthenticationBackend',
+    'django.contrib.auth.backends.ModelBackend',
+  
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -75,7 +80,7 @@ SIMPLE_JWT = {
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'authentication', 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -164,6 +169,10 @@ CORS_ALLOW_ALL_ORIGINS=True
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
 STATIC_URL = 'static/'
+
+
+MEDIA_ROOT = 'C:/Users/Tony/Pictures/django' 
+MEDIA_URL = '/media/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
