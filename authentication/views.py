@@ -14,8 +14,10 @@ from django.conf import settings
 from django.contrib.messages.views import SuccessMessageMixin
 from django.urls import reverse_lazy
 from django.contrib.auth.views import PasswordResetView
-from django.shortcuts import render
-
+from django.shortcuts import render,get_object_or_404
+from django.contrib.auth import get_user_model
+from django.forms import ValidationError
+from django.http import QueryDict
 
 #green this issssss verrrrrrrrrrrrrified APi
 @api_view(['GET'])
@@ -70,10 +72,10 @@ def register(request):
 
 #green this issssss Geeeeeeeeeeeeeeeeeeeeeet APi
 @api_view(['GET'])
-#@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated])
 def geet(request):
-    obj=User.objects.get(username="Yousef")
-    serializer = getSerializer(instance=obj, context={'request': request})
+    user = request.user
+    serializer = getSerializer(instance=user)
     return Response(serializer.data)
 
 
@@ -110,3 +112,37 @@ def logout(request):
     serializer.save()
 
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+
+#green this issssss Proooofile-Ediiiiit APi
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def edit_profile(request):
+    user = request.user
+    mutable_data = QueryDict(mutable=True) 
+    mutable_data.update(request.data)
+    if 'email' in mutable_data:
+        del mutable_data['email']
+        return Response({"msg":"you can't update your email"}, status=status.HTTP_400_BAD_REQUEST)
+    serializer = RegisterSerializer(instance=user, data=mutable_data, partial=True)
+    if serializer.is_valid(raise_exception=True):
+        serializer.save()
+        return Response({"msg": "Your profile has been updated", "data": serializer.data}, status=status.HTTP_200_OK)
+    else:
+        errors = serializer.errors
+        return Response({"error": errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+#green this issssss Deletiiiiiiingg APi
+permission_classes([IsAuthenticated])
+@api_view(['DELETE'])
+def delete_user(request):
+    try:
+        user = request.user
+        user.delete()
+        return Response({"msg":"Your account has been deleted."}, status=status.HTTP_200_OK)
+    except user.DoesNotExis:
+        return Response({"msg":"User not found."}, status=status.HTTP_404_NOT_FOUND)

@@ -53,7 +53,9 @@ class RegisterSerializer(serializers.ModelSerializer):
     def validate_phone_number(self, value):
         mobile_regex = regex=r'^(09\d{8}|\+963\d{9})$'
         if not re.match(mobile_regex, value):
-             raise ValidationError("Invalid mobile number. \n must be in the format 09XXXXXXXX or +963XXXXXXXXX'")
+            errorr= "Invalid mobile number must be in the format 09XXXXXXXX or +963XXXXXXXXX"
+            print(errorr)
+            raise ValidationError("Invalid mobile number.Must be in the format 09XXXXXXXX or +963XXXXXXXXX")
         return value
 
     def validate_first_name(self, value):
