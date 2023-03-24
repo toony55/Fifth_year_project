@@ -43,7 +43,7 @@ class Category(models.Model):
 class Service(models.Model):
     title = models.CharField(max_length=100)
     description = models.TextField()
-    categories = models.ManyToManyField(Category, related_name='categories')
+    categories = models.ManyToManyField(Category, related_name='categories',blank=True)
     price = models.DecimalField(max_digits=8, decimal_places=2)
     delivery_time = models.IntegerField(help_text='Enter delivery time in days')
     revisions = models.IntegerField(default=0, help_text='Enter the number of revisions included in the service')

@@ -46,3 +46,33 @@ class SkillSerializer(serializers.ModelSerializer):
         if Skill.objects.filter(user=user, name=name).exists():
             raise serializers.ValidationError('You have this Skill already')
         return data
+
+
+
+class CertificateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Certificate
+        fields = ['name', 'image']
+
+    def validate(self, data):
+        user = self.context['request'].user
+        name=data.get('name')
+        if Certificate.objects.filter(user=user, name=name).exists():
+            raise serializers.ValidationError('You have this Certificate already')
+        return data
+
+
+class ServiceSerializer(serializers.ModelSerializer):
+
+    categories = serializers.PrimaryKeyRelatedField(many=True, queryset=Category.objects.all())
+    
+    class Meta:
+        model = Service
+        fields = ['title','description','categories','price','delivery_time','revisions']
+
+    def validate(self, data):
+        title=data.get('title')
+        if not title.isalnum():
+            raise serializers.ValidationError('Title must not have any Symbol')
+        return data
