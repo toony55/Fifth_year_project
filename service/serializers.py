@@ -1,3 +1,4 @@
+from multiprocessing.sharedctypes import Value
 from rest_framework import serializers
 from .models import Service,Category,Skill,Certificate
 
@@ -28,24 +29,38 @@ class SkillSerializer(serializers.ModelSerializer):
             return "Awesome"
 
     def validate_percent(self, value):
-        if not value.endswith('%'):
-            raise serializers.ValidationError('Percentage must end with a % symbol')
-        try:
-            percent = int(value[:-1])
-            if not (0 <= percent <= 100):
-                raise serializers.ValidationError('Percentage must be between 0 and 100')
-        except ValueError:
-            raise serializers.ValidationError('Invalid percentage value')
+        if value is not None:
+            if not value.endswith('%'):
+                raise serializers.ValidationError('Percentage must end with a % symbol')
+            try:
+                percent = int(value[:-1])
+                if not (0 <= percent <= 100):
+                    raise serializers.ValidationError('Percentage must be between 0 and 100')
+            except ValueError:
+                raise serializers.ValidationError('Invalid percentage value')
         return value
+
 
     def validate(self, data):
         user = self.context['request'].user
+        name = data.get('name')
         percent = data.get('percent')
-        self.validate_percent(percent)
-        name=data.get('name')
-        if Skill.objects.filter(user=user, name=name).exists():
+
+        if self.instance and name == self.instance.name and percent == self.instance.percent:
+            raise serializers.ValidationError('You did not make any changes')
+
+        if name is not None and Skill.objects.filter(user=user, name=name).exists() and (not self.instance or name != self.instance.name):
             raise serializers.ValidationError('You have this Skill already')
+
+        if name is None and percent == self.instance.percent or percent is None and name == self.instance.name:
+            raise serializers.ValidationError('You did not make any changes')
+
+        if 'name' not in data and 'percent' not in data:
+            raise serializers.ValidationError('You did not make any changes')
+
         return data
+
+       
 
 
 
@@ -57,9 +72,21 @@ class CertificateSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         user = self.context['request'].user
-        name=data.get('name')
-        if Certificate.objects.filter(user=user, name=name).exists():
+        name = data.get('name')
+        image = data.get('image')
+
+        if self.instance and name == self.instance.name and image == self.instance.image:
+            raise serializers.ValidationError('You did not make any changes')
+
+        if name is not None and Skill.objects.filter(user=user, name=name).exists() and (not self.instance or name != self.instance.name):
             raise serializers.ValidationError('You have this Certificate already')
+
+        if name is None and image == self.instance.image or image is None and name == self.instance.name:
+            raise serializers.ValidationError('You did not make any changes')
+
+        if 'name' not in data and 'image' not in data:
+            raise serializers.ValidationError('You did not make any changes')
+
         return data
 
 
