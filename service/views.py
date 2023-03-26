@@ -1,7 +1,7 @@
-from .serializers import SkillSerializer,CertificateSerializer,ServiceSerializer
+from .serializers import SkillSerializer,CertificateSerializer,ServiceSerializer,SellServiceSerializer,SellServiceSerializer
 from rest_framework.decorators import api_view,permission_classes
 from rest_framework.permissions import IsAuthenticated
-from .models import Service,Category,Skill,Certificate
+from .models import Service,Category,Skill,Certificate,SellService
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
@@ -30,6 +30,21 @@ def create_certificate(request):
     serializer = CertificateSerializer(data=request.data, context={'request': request})
     if serializer.is_valid():
         serializer.save(user=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+#sky this issssss SellllServiiiiiice APi
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_sellservice(request):
+    data=request.data.copy()
+    serializer = SellServiceSerializer(data=data, context={'request': request})
+    if serializer.is_valid():
+        categories =data.pop('categories', [])
+        service = serializer.save(user=request.user)
+        for category in categories:
+            service.categories.add(category)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -144,6 +159,64 @@ def delete_Skill(request):
     skill.delete()
     
     return Response({'msg': 'Skill has been deleted'}, status=status.HTTP_204_NO_CONTENT)
+
+
+
+#sky this issssss Profile-service-Get APi
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_PServices(request):
+    services = Service.objects.filter(user=request.user)
+    serializer =ServiceSerializer(services, many=True)
+    return Response(serializer.data)
+#sky this issssss Profile-sellservice-Get APi
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_PSellServices(request):
+    sellservices = SellService.objects.filter(user=request.user)
+    serializer =SellServiceSerializer(sellservices, many=True)
+    return Response(serializer.data)
+
+
+
+
+#sky this issssss Filter-service-Get APi
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def all_services(request):
+    category_ids = request.GET.getlist('category_id')
+    price = request.GET.get('price')
+
+    services = Service.objects.all().order_by('-created_at')
+    if category_ids:
+        categories = Category.objects.filter(pk__in=category_ids)
+        services = services.filter(categories__in=categories).distinct()
+    if price:
+        services = services.filter(price__gte=price)
+
+    serializer = ServiceSerializer(services, many=True)
+
+    return Response(serializer.data)
+
+
+
+#sky this issssss Filter-Sellservice-Get APi
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def all_SellServices(request):
+    category_ids = request.GET.getlist('category_id')
+    price = request.GET.get('price')
+
+    services = SellService.objects.all().order_by('-created_at')
+    if category_ids:
+        categories = Category.objects.filter(pk__in=category_ids)
+        services = services.filter(categories__in=categories).distinct()
+    if price:
+        services = services.filter(price__gte=price)
+
+    serializer = SellServiceSerializer(services, many=True)
+
+    return Response(serializer.data)
 
 
 

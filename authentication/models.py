@@ -48,6 +48,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     phone_number = models.CharField(max_length=13,unique=True)
     birthdate = models.DateField(default=date.today)
     image = models.ImageField(upload_to='images/',default='images/1.png')
+    experience = models.TextField(default='',blank=True)
+
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username','first_name','last_name','phone_number','birthdate']

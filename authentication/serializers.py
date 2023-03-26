@@ -34,7 +34,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['email', 'username', 'password','confirm_password','first_name','last_name','phone_number','address','birthdate','image']
+        fields = ['email', 'username', 'password','confirm_password','first_name','last_name','phone_number','address','birthdate','image','experience']
 
     def validate_password(self,value):
        if len(value) < 8:
@@ -104,7 +104,7 @@ class getSerializer(serializers.ModelSerializer):
         return image_url
     class Meta:
         model = User
-        fields = ['email', 'username','first_name','last_name','phone_number','address','birthdate','image','image_url','created_at','updated_at']
+        fields = ['email', 'username','first_name','last_name','phone_number','address','birthdate','image','image_url','created_at','updated_at','experience']
 
 
 #green this issssss LoooooooooooooooooooooogIn Serializer

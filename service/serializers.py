@@ -1,6 +1,6 @@
 from multiprocessing.sharedctypes import Value
 from rest_framework import serializers
-from .models import Service,Category,Skill,Certificate
+from .models import Service,Category,Skill,Certificate,SellService
 
 
 
@@ -96,6 +96,22 @@ class ServiceSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Service
+        fields = ['title','description','categories','price','delivery_time','revisions']
+
+    def validate(self, data):
+        title=data.get('title')
+        if not title.isalnum():
+            raise serializers.ValidationError('Title must not have any Symbol')
+        return data
+
+
+
+class SellServiceSerializer(serializers.ModelSerializer):
+
+    categories = serializers.PrimaryKeyRelatedField(many=True, queryset=Category.objects.all())
+    
+    class Meta:
+        model = SellService
         fields = ['title','description','categories','price','delivery_time','revisions']
 
     def validate(self, data):

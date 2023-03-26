@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model 
+from django.utils import timezone
 
 User=get_user_model()
 
@@ -49,8 +50,28 @@ class Service(models.Model):
     revisions = models.IntegerField(default=0, help_text='Enter the number of revisions included in the service')
     is_taken=models.BooleanField(default=False)   
     samples = models.URLField(help_text='Enter a link to samples of previous work',null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
    
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='services')
+
+    def __str__(self):
+        return self.title
+
+
+class SellService(models.Model):
+    title = models.CharField(max_length=100)
+    description = models.TextField()
+    categories = models.ManyToManyField(Category, related_name='Sell_categories',blank=True)
+    price = models.DecimalField(max_digits=8, decimal_places=2)
+    delivery_time = models.IntegerField(help_text='Enter delivery time in days')
+    revisions = models.IntegerField(default=0, help_text='Enter the number of revisions included in the service')
+    is_taken=models.BooleanField(default=False)   
+    samples = models.URLField(help_text='Enter a link to samples of previous work',null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+   
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sellservices')
 
     def __str__(self):
         return self.title
