@@ -26,7 +26,7 @@ class Skill(models.Model):
         return self.name
 
 class Category(models.Model):
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length=50,unique=True)
     parent = models.ForeignKey('self',null=True, blank=True, related_name='children', on_delete=models.CASCADE)
     description = models.TextField(default='category_example',blank=True)
     image = models.ImageField(upload_to='category_images/', blank=True,default='images/1.png', null=True)
@@ -53,7 +53,7 @@ class Service(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
    
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='services')
+    buyer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='services')
 
     def __str__(self):
         return self.title
@@ -71,7 +71,60 @@ class SellService(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
    
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sellservices')
+    seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sellservices')
 
     def __str__(self):
         return self.title
+    
+
+
+
+class Request(models.Model):
+    PENDING = 'pending'
+    ACCEPTED = 'accepted'
+    DENIED = 'denied'
+    STATUS_CHOICES = (
+        (PENDING, 'Pending'),
+        (ACCEPTED, 'Accepted'),
+        (DENIED, 'Denied'),
+    )
+
+    seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='seller_requests')
+    buyer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='buyer_requests')
+    service = models.ForeignKey(Service, on_delete=models.CASCADE)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.service} ({self.status})'
+    
+
+class SellRequest(models.Model):
+    PENDING = 'pending'
+    ACCEPTED = 'accepted'
+    DENIED = 'denied'
+    STATUS_CHOICES = (
+        (PENDING, 'Pending'),
+        (ACCEPTED, 'Accepted'),
+        (DENIED, 'Denied'),
+    )
+
+    seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='seller_request')
+    buyer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='buyer_request')
+    service = models.ForeignKey(SellService, on_delete=models.CASCADE)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.service} ({self.status})'
+    
+class Rating(models.Model):
+    rated_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_ratings')
+    rating_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='given_ratings')
+    value = models.IntegerField()
+    comment = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{self.rating_user.username} did rate {self.rated_user.username}'

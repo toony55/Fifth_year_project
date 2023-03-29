@@ -1,6 +1,6 @@
 from multiprocessing.sharedctypes import Value
 from rest_framework import serializers
-from .models import Service,Category,Skill,Certificate,SellService
+from .models import Service,Category,Skill,Certificate,SellService,Request,SellRequest,Rating
 
 
 
@@ -60,8 +60,6 @@ class SkillSerializer(serializers.ModelSerializer):
 
         return data
 
-       
-
 
 
 class CertificateSerializer(serializers.ModelSerializer):
@@ -90,13 +88,16 @@ class CertificateSerializer(serializers.ModelSerializer):
         return data
 
 
+
 class ServiceSerializer(serializers.ModelSerializer):
 
     categories = serializers.PrimaryKeyRelatedField(many=True, queryset=Category.objects.all())
-    
+    buyer = serializers.StringRelatedField()
     class Meta:
         model = Service
-        fields = ['title','description','categories','price','delivery_time','revisions']
+        fields = ['id','title','description','categories','price','delivery_time','revisions','buyer','is_taken']
+
+
 
     def validate(self, data):
         title=data.get('title')
@@ -118,4 +119,53 @@ class SellServiceSerializer(serializers.ModelSerializer):
         title=data.get('title')
         if not title.isalnum():
             raise serializers.ValidationError('Title must not have any Symbol')
+        return data
+    
+
+
+
+class RequestSerializer(serializers.ModelSerializer):
+    service_id = serializers.PrimaryKeyRelatedField(queryset=Service.objects.all(), source='service')
+
+    class Meta:
+        model = Request
+        fields = ['id', 'seller', 'buyer', 'service', 'status', 'created_at','service_id']
+        read_only_fields = ['id', 'seller', 'created_at','buyer','service']
+
+class SellRequestSerializer(serializers.ModelSerializer):
+    service_id = serializers.PrimaryKeyRelatedField(queryset=SellService.objects.all(), source='service')
+
+    class Meta:
+        model = SellRequest
+        fields = ['id', 'seller', 'buyer', 'service', 'status', 'created_at','service_id']
+        read_only_fields = ['id', 'seller', 'created_at','buyer','service']
+
+
+
+
+class RatingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Rating
+        fields = ['id', 'rated_user', 'rating_user', 'value', 'comment', 'created_at', 'updated_at']
+        read_only_fields = ['rated_user', 'rating_user']
+
+    
+    def validate_value(self, value):
+        if value < 1 or value > 5:
+            raise serializers.ValidationError("Value must be between 1 and 5.")
+        return value
+    
+    def validate(self, data):
+        value = data.get('value')
+        comment = data.get('comment')
+
+        if self.instance and value == self.instance.value and comment == self.instance.comment:
+            raise serializers.ValidationError('You did not make any changes')
+
+        if value is None and comment == self.instance.comment or comment is None and value == self.instance.value:
+            raise serializers.ValidationError('You did not make any changes')
+
+        if 'value' not in data and 'comment' not in data:
+            raise serializers.ValidationError('You did not make any changes')
+        
         return data
