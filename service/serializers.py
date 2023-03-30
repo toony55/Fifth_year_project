@@ -113,7 +113,7 @@ class SellServiceSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = SellService
-        fields = ['title','description','categories','price','delivery_time','revisions']
+        fields = ['title','description','categories','price','delivery_time','revisions','seller']
 
     def validate(self, data):
         title=data.get('title')

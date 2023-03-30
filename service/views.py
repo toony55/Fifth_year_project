@@ -2,11 +2,12 @@ from .serializers import SkillSerializer,CertificateSerializer,ServiceSerializer
 RequestSerializer,SellRequestSerializer,RatingSerializer
 from rest_framework.decorators import api_view,permission_classes
 from rest_framework.permissions import IsAuthenticated
-from .models import Service,Category,Skill,Certificate,SellService,Request,SellRequest,Rating
+from .models import Service,Category,Skill,Certificate,SellService,Request,SellRequest,Rating,Block
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from django.contrib.auth import get_user_model 
+from django.contrib.auth import get_user_model
+from django.db.models import Avg,Count
 
 
 
@@ -187,6 +188,7 @@ def get_PSellServices(request):
 def all_services(request):
     category_ids = request.GET.getlist('category_id')
     price = request.GET.get('price')
+    min_rating = request.GET.get('min_rating')
 
     services = Service.objects.all().order_by('-created_at')
     if category_ids:
@@ -194,6 +196,16 @@ def all_services(request):
         services = services.filter(categories__in=categories).distinct()
     if price:
         services = services.filter(price__gte=price)
+    if min_rating:
+        services = services.annotate(avg_rating=Avg('buyer__received_ratings__value'),count_rating=Count('buyer__received_ratings'))
+        services = services.filter(avg_rating__gte=min_rating).order_by('-count_rating')
+
+    blocking_relationships = Block.objects.filter(blocker=request.user)
+    blocked_users = [br.blocked for br in blocking_relationships]
+    services = services.exclude(buyer__in=blocked_users)
+    blocked_by_relationships = Block.objects.filter(blocked=request.user)
+    blocked_by_users = [br.blocker for br in blocked_by_relationships]
+    services = services.exclude(buyer__in=blocked_by_users)  
     services = services.filter(is_taken=False)
     serializer = ServiceSerializer(services, many=True)
 
@@ -207,6 +219,7 @@ def all_services(request):
 def all_SellServices(request):
     category_ids = request.GET.getlist('category_id')
     price = request.GET.get('price')
+    min_rating = request.GET.get('min_rating')
 
     services = SellService.objects.all().order_by('-created_at')
     if category_ids:
@@ -214,7 +227,17 @@ def all_SellServices(request):
         services = services.filter(categories__in=categories).distinct()
     if price:
         services = services.filter(price__gte=price)
+    if min_rating:
+        services = services.annotate(avg_rating=Avg('buyer__received_ratings__value'),count_rating=Count('buyer__received_ratings'))
+        services = services.filter(avg_rating__gte=min_rating).order_by('-count_rating')
 
+    blocking_relationships = Block.objects.filter(blocker=request.user)
+    blocked_users = [br.blocked for br in blocking_relationships]
+    services = services.exclude(seller__in=blocked_users)
+    blocked_by_relationships = Block.objects.filter(blocked=request.user)
+    blocked_by_users = [br.blocker for br in blocked_by_relationships]
+    services = services.exclude(seller__in=blocked_by_users)  
+    services = services.filter(is_taken=False)
     serializer = SellServiceSerializer(services, many=True)
 
     return Response(serializer.data)
@@ -500,6 +523,27 @@ def edit_Ratings(request):
         serializer.save()
         return Response({"msg": "Your rate have been updated", "data": serializer.data}, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
+
+
+#sky this issssss block APi
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def block_user(request):
+    blocked_id =request.query_params.get('blocked_id')
+    user_model=get_user_model()
+    user_to_block = get_object_or_404(user_model, id=blocked_id)
+
+    if user_to_block==request.user:
+        return Response({'message':'You Cann''ot Block Yourself'},status=status.HTTP_204_NO_CONTENT)
+    is_blocked = Block.objects.filter(blocker=request.user, blocked=user_to_block).exists()
+    if is_blocked:
+        Block.objects.filter(blocker=request.user, blocked=user_to_block).delete()
+        return Response({'message': user_to_block.username+' '+'has been unblocked'},status=status.HTTP_204_NO_CONTENT)
+
+    else:
+        Block.objects.create(blocker=request.user, blocked=user_to_block)
+        return Response({'message':'you have blocked'+' '+user_to_block.username},status=status.HTTP_204_NO_CONTENT)
+
 
 
 

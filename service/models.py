@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth import get_user_model 
 from django.utils import timezone
+from django.db.models import Sum, Count
+
 
 User=get_user_model()
 
@@ -121,10 +123,19 @@ class SellRequest(models.Model):
 class Rating(models.Model):
     rated_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_ratings')
     rating_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='given_ratings')
-    value = models.IntegerField()
+    value = models.DecimalField(max_digits=3, decimal_places=2)
     comment = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f'{self.rating_user.username} did rate {self.rated_user.username}'
+    
+
+class Block(models.Model):
+    blocker = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blocking')
+    blocked = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blocked_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.blocker.username} did block {self.blocked.username}'

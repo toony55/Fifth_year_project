@@ -2,7 +2,7 @@ from django.urls import path,include
 from .views import create_skill,create_certificate,create_service,get_certificates,get_skills,edit_certificate,\
     edit_skill,delete_certificate,delete_Skill,create_sellservice,get_PServices,get_PSellServices,all_services,all_SellServices, \
     create_service_request,get_requests,Response_request,create_sell_service_request,get_sell_requests,Response_Sell_request,\
-    delete_service_request,delete_sell_service_request,do_Ratings,delete_Ratings,edit_Ratings
+    delete_service_request,delete_sell_service_request,do_Ratings,delete_Ratings,edit_Ratings,block_user
 
 
 urlpatterns = [
@@ -31,6 +31,7 @@ urlpatterns = [
     path('do_Ratings/',do_Ratings,name="do_Ratings"),
     path('delete_Ratings/',delete_Ratings,name="delete_Ratings"),
     path('edit_Ratings/',edit_Ratings,name="edit_Ratings"),
+    path('block_user/',block_user,name="block_user"),
 
 
 ]

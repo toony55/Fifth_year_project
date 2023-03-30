@@ -18,6 +18,7 @@ from django.shortcuts import render,get_object_or_404
 from django.contrib.auth import get_user_model
 from django.forms import ValidationError
 from django.http import QueryDict
+from service.models import Block
 
 #green this issssss verrrrrrrrrrrrrified APi
 @api_view(['GET'])
@@ -74,9 +75,23 @@ def register(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def geet(request):
-    user = request.user
-    serializer = getSerializer(instance=user)
-    return Response(serializer.data)
+    user_id =request.query_params.get('user_id')
+    if user_id:
+        user_model = get_user_model()
+        profile_user = get_object_or_404(user_model, id=user_id)
+        if Block.objects.filter(blocked=request.user, blocker=profile_user).exists():
+            return Response({'message':'You do not have permission to access this user\'s information.'},status=status.HTTP_403_FORBIDDEN)
+        elif profile_user==request.user:
+            serializer = getSerializer(instance=request.user)
+            return Response({'data':serializer.data})
+        else: 
+            is_blocked=Block.objects.filter(blocked=profile_user, blocker=request.user).exists()
+            serializer=getSerializer(instance=profile_user)
+            return Response({'is_blocked':is_blocked,'data':serializer.data})
+    
+    else:
+        serializer = getSerializer(instance=request.user)
+        return Response({'data':serializer.data})
 
 
 #green this issssss LoooooooooooooooooooooogIn APi

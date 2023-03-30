@@ -11,6 +11,8 @@ from django.urls import reverse
 from django.contrib.sites.shortcuts import get_current_site
 from .utils import Util
 from django.contrib.auth import authenticate
+from django.db.models import Sum,Count
+
 
 #green this issssss verrrrrrrrrrrrrified Serializer
 
@@ -92,7 +94,8 @@ class getSerializer(serializers.ModelSerializer):
     created_at=serializers.DateTimeField(format="%Y-%m-%d- %H:%M")
     updated_at=serializers.DateTimeField(format="%Y-%m-%d- %H:%M")
     image_url = serializers.SerializerMethodField()
-    
+    average_rating = serializers.SerializerMethodField()
+    number_of_ratings=serializers.SerializerMethodField()
 
     def get_image_url(self, obj):
         request = self.context.get('request')
@@ -102,9 +105,20 @@ class getSerializer(serializers.ModelSerializer):
         else:
             image_url = obj.image.url
         return image_url
+    def get_number_of_ratings(self, obj):
+        result = obj.received_ratings.aggregate(count=Count('value'))
+        count = result.get('count', 0)
+        return count
+    def get_average_rating(self, obj):
+        result = obj.received_ratings.aggregate(total=Sum('value'), count=Count('value'))
+        total = result.get('total', 0)
+        count = result.get('count', 0)
+        if count == 0:
+            return 0
+        return round(total / count, 2)
     class Meta:
         model = User
-        fields = ['email', 'username','first_name','last_name','phone_number','address','birthdate','image','image_url','created_at','updated_at','experience']
+        fields = ['email', 'username','first_name','last_name','phone_number','address','birthdate','image','image_url','created_at','updated_at','experience','average_rating','number_of_ratings']
 
 
 #green this issssss LoooooooooooooooooooooogIn Serializer
