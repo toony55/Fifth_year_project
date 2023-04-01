@@ -1,6 +1,6 @@
 from multiprocessing.sharedctypes import Value
 from rest_framework import serializers
-from .models import Service,Category,Skill,Certificate,SellService,Request,SellRequest,Rating
+from .models import Service,Category,Skill,Certificate,SellService,Request,SellRequest,Rating,Report
 
 
 
@@ -168,4 +168,36 @@ class RatingSerializer(serializers.ModelSerializer):
         if 'value' not in data and 'comment' not in data:
             raise serializers.ValidationError('You did not make any changes')
         
+        return data
+    
+
+class ReportSerializer(serializers.ModelSerializer):
+    reason_text = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Report
+        fields = ['id','reason', 'other_reason','reporter','reported','created_at','other_reason','reason_text']
+        read_only_fields = ['id','reporter', 'reported']
+
+    def get_reason_text(self, obj):
+        reason = obj.reason
+        other_reason = obj.other_reason
+
+        if other_reason:
+            return f'"{other_reason}"'
+        else:
+            return dict(self.Meta.model.REPORT_REASON_CHOICES)[reason]
+        
+    def validate(self, data):
+        reason = data.get('reason')
+        other_reason = data.get('other_reason')
+
+        if reason == 'Other' and not other_reason:
+            raise serializers.ValidationError("If you select 'Other' as the reason, you must provide a description.")
+        
+        if other_reason:
+            reason_text = f"{other_reason}"
+        else:
+            reason_text= dict(self.Meta.model.REPORT_REASON_CHOICES)[reason]
+
         return data

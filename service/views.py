@@ -1,14 +1,17 @@
 from .serializers import SkillSerializer,CertificateSerializer,ServiceSerializer,SellServiceSerializer,\
-RequestSerializer,SellRequestSerializer,RatingSerializer
+RequestSerializer,SellRequestSerializer,RatingSerializer,ReportSerializer
 from rest_framework.decorators import api_view,permission_classes
 from rest_framework.permissions import IsAuthenticated
-from .models import Service,Category,Skill,Certificate,SellService,Request,SellRequest,Rating,Block
+from .models import Service,Category,Skill,Certificate,SellService,Request,SellRequest,Rating,Block,Report
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.db.models import Avg,Count
-
+from django.utils import timezone
+from authentication.utils import Util
+from .email_messages import REPORT_EMAIL_BODY
+from datetime import datetime
 
 
 
@@ -546,6 +549,46 @@ def block_user(request):
 
 
 
+#sky this issssss Report APi
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def report_user(request):
+    reported_user_id=request.query_params.get('reported_user_id')
+    user_model=get_user_model()
+    reported_user = get_object_or_404(user_model, id=reported_user_id)
+    reporter_user = request.user
 
+    if reported_user == reporter_user:
+        return Response({"error": "You cannot report yourself."}, status=status.HTTP_400_BAD_REQUEST)
+    today = timezone.now().date()
+    count_reports = Report.objects.filter(reporter=reporter_user, created_at__date=today).count()
+    if count_reports >= 3:
+        return Response({"error": "You have reached the maximum number of reports for today."}, status=status.HTTP_400_BAD_REQUEST)
+    
+    serializer = ReportSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    serializer.save(reporter=reporter_user, reported=reported_user)
+    email_body=REPORT_EMAIL_BODY.format(reported_user=reported_user.username, reason=serializer.data['reason_text'])
+    data = {'email_body': email_body, 'to_email': reported_user.email,
+                'email_subject': 'Account Report Notification'}
+    Util.send_email(data)
+
+
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     
+#sky this issssss Get_Reports APi
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_reports(request):
+    user=request.user
+    reports=Report.objects.filter(reported=user)
+    serializer=ReportSerializer(reports,many=True)
+    for item in serializer.data:
+        created_at_str = item['created_at']
+        created_at_dt = datetime.strptime(created_at_str, "%Y-%m-%dT%H:%M:%S.%f")
+        item['created_at'] = created_at_dt.strftime("%Y-%m-%d %I:%M %p")
+    for report_data in serializer.data:
+        report_data.pop("reporter", None)
+
+    return Response(serializer.data)

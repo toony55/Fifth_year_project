@@ -96,6 +96,8 @@ class getSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
     average_rating = serializers.SerializerMethodField()
     number_of_ratings=serializers.SerializerMethodField()
+    number_of_reports=serializers.SerializerMethodField()
+
 
     def get_image_url(self, obj):
         request = self.context.get('request')
@@ -105,6 +107,11 @@ class getSerializer(serializers.ModelSerializer):
         else:
             image_url = obj.image.url
         return image_url
+    def get_number_of_reports(self, obj):
+        result = obj.reports_received.aggregate(count=Count('reason'))
+        reports = result.get('count', 0)
+        return reports
+    
     def get_number_of_ratings(self, obj):
         result = obj.received_ratings.aggregate(count=Count('value'))
         count = result.get('count', 0)
@@ -118,7 +125,8 @@ class getSerializer(serializers.ModelSerializer):
         return round(total / count, 2)
     class Meta:
         model = User
-        fields = ['email', 'username','first_name','last_name','phone_number','address','birthdate','image','image_url','created_at','updated_at','experience','average_rating','number_of_ratings']
+        fields = ['email', 'username','first_name','last_name','phone_number','address','birthdate','image','image_url',\
+                  'created_at','updated_at','experience','average_rating','number_of_ratings','number_of_reports']
 
 
 #green this issssss LoooooooooooooooooooooogIn Serializer
@@ -174,7 +182,7 @@ class LoginSerializer(serializers.ModelSerializer):
             Util.send_email(data)
             raise AuthenticationFailed('Your Account is not verified yet,plz check your email')
 
-        if not user.Active:
+        if not user.is_active:
             raise AuthenticationFailed('Account disabled, contact admin')
 
 
