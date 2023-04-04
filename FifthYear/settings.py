@@ -68,7 +68,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'FifthYear.urls'
 
-
+SESSION_COOKIE_AGE = 3600
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),

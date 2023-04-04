@@ -201,3 +201,17 @@ class ReportSerializer(serializers.ModelSerializer):
             reason_text= dict(self.Meta.model.REPORT_REASON_CHOICES)[reason]
 
         return data
+
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    num_services = serializers.SerializerMethodField()
+
+    def get_num_services(self, obj):
+        return Service.objects.filter(categories=obj).count()
+
+
+    class Meta:
+         model=Category
+         fields=['image','description','name','num_services']
+    

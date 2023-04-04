@@ -1,5 +1,5 @@
 from .serializers import SkillSerializer,CertificateSerializer,ServiceSerializer,SellServiceSerializer,\
-RequestSerializer,SellRequestSerializer,RatingSerializer,ReportSerializer
+RequestSerializer,SellRequestSerializer,RatingSerializer,ReportSerializer,CategorySerializer
 from rest_framework.decorators import api_view,permission_classes
 from rest_framework.permissions import IsAuthenticated
 from .models import Service,Category,Skill,Certificate,SellService,Request,SellRequest,Rating,Block,Report
@@ -13,6 +13,14 @@ from authentication.utils import Util
 from .email_messages import REPORT_EMAIL_BODY
 from datetime import datetime
 
+
+
+#sky this issssss get_categories APi
+@api_view(['GET'])
+def get_categories(request):
+    top_categories =Category.objects.annotate(num_services=Count('categories')).order_by('-num_services')[:9]
+    serializer=CategorySerializer(top_categories,many=True)
+    return Response(serializer.data)
 
 
 
@@ -319,7 +327,6 @@ def create_sell_service_request(request):
 def get_requests(request):
     user = request.user
     
-    # Get query parameters from the request URL
     role = request.query_params.get('role')
     status = request.query_params.get('status')
 
@@ -340,7 +347,6 @@ def get_requests(request):
 def get_sell_requests(request):
     user = request.user
     
-    # Get query parameters from the request URL
     role = request.query_params.get('role')
     status = request.query_params.get('status')
 

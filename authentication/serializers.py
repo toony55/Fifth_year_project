@@ -12,6 +12,8 @@ from django.contrib.sites.shortcuts import get_current_site
 from .utils import Util
 from django.contrib.auth import authenticate
 from django.db.models import Sum,Count
+from django.core.cache import cache
+from datetime import datetime, timedelta
 
 
 #green this issssss verrrrrrrrrrrrrified Serializer
@@ -103,7 +105,7 @@ class getSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if request is not None:
             image_url = request.build_absolute_uri(obj.image.url)
-            
+
         else:
             image_url = obj.image.url
         return image_url
@@ -111,7 +113,7 @@ class getSerializer(serializers.ModelSerializer):
         result = obj.reports_received.aggregate(count=Count('reason'))
         reports = result.get('count', 0)
         return reports
-    
+
     def get_number_of_ratings(self, obj):
         result = obj.received_ratings.aggregate(count=Count('value'))
         count = result.get('count', 0)
@@ -170,17 +172,28 @@ class LoginSerializer(serializers.ModelSerializer):
 
         if not user:
             raise AuthenticationFailed('Wrong Email|Username or Password')
-
         if not user.is_verified:
-            token = RefreshToken.for_user(user).access_token
-            relativeLink = reverse('email-verify')
-            absurl = 'http://127.0.0.1:8000'+relativeLink+"?token="+str(token)
-            email_body = 'Hi '+user.username + \
-            ' Use the link below to verify your email \n' + absurl
-            data = {'email_body': email_body, 'to_email': user.email,
-                'email_subject': 'Verify your email'}
-            Util.send_email(data)
-            raise AuthenticationFailed('Your Account is not verified yet,plz check your email')
+                last_email_sent_at = self.context['request'].session.get('last_email_sent_at')
+                if last_email_sent_at is not None:
+                    num_emails_sent = self.context['request'].session.get('num_emails_sent', 0)
+                    minutes_to_wait = 10 * (num_emails_sent + 1)
+                    time_since_last_email = datetime.now() - datetime.fromisoformat(last_email_sent_at)
+                    if time_since_last_email < timedelta(minutes=minutes_to_wait):
+                        raise AuthenticationFailed(f'Your account is not verified yet and a Verification email is already sent. Please wait {minutes_to_wait} minutes and try again.')
+
+                token = RefreshToken.for_user(user).access_token
+                relativeLink = reverse('email-verify')
+                absurl = 'http://127.0.0.1:8000'+relativeLink+"?token="+str(token)
+                email_body = 'Hi '+user.username + \
+                ' Use the link below to verify your email \n' + absurl
+                data = {'email_body': email_body, 'to_email': user.email,
+                    'email_subject': 'Verify your email'}
+                Util.send_email(data)
+
+                num_emails_sent = self.context['request'].session.get('num_emails_sent', 0) 
+                self.context['request'].session['num_emails_sent'] = num_emails_sent
+                self.context['request'].session['last_email_sent_at'] = datetime.now().isoformat()
+                raise AuthenticationFailed('Your account is not verified yet. A verification email has been sent to your email address. Please check your inbox and follow the instructions to verify your email.')
 
         if not user.is_active:
             raise AuthenticationFailed('Account disabled, contact admin')
